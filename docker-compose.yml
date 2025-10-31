@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: patient_health_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: healthpass123
+      POSTGRES_DB: patient_health_analytics
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d
+    networks:
+      - health_network
+
+  python:
+    build: .
+    container_name: health_analytics_app
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_USER: admin
+      DB_PASSWORD: healthpass123
+      DB_NAME: patient_health_analytics
+    networks:
+      - health_network
+
+volumes:
+  postgres_data:
+
+networks:
+  health_network:
