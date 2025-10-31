@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS patient_symptoms (
     patient_id INT NOT NULL REFERENCES patients(patient_id),
     symptom_id INT NOT NULL REFERENCES symptoms(symptom_id),
     onset_date DATE,
-    severity INT (1-10)
+    severity INT CHECK (severity >= 1 AND severity <= 10)
 );
 
 CREATE TABLE IF NOT EXISTS medications (

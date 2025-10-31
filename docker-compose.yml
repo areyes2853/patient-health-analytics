@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15
@@ -15,12 +13,20 @@ services:
       - ./sql:/docker-entrypoint-initdb.d
     networks:
       - health_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d patient_health_analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  python:
+  flask-api:
     build: .
-    container_name: health_analytics_app
+    container_name: health_analytics_api
+    ports:
+      - "5001:5000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       DB_HOST: postgres
       DB_USER: admin
