@@ -1,3 +1,9 @@
+# Epic FHIR integration and Flask API for Patient Health Analytics
+from epic_fhir import EpicFHIRClient, get_epic_auth_url, exchange_code_for_token
+from flask import request, session, redirect, url_for
+import pandas as pd
+import json
+
 from flask import render_template
 from flask import Flask, jsonify
 from flask_cors import CORS
@@ -141,6 +147,7 @@ def patient_conditions_analytics():
             }
             for r in results
         ]
+
         
         conn.close()
         
@@ -150,6 +157,116 @@ def patient_conditions_analytics():
             "description": "Shows how many patients have each condition (grouped by condition name, ordered by frequency)",
             "timestamp": datetime.now().isoformat()
         }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Epic FHIR routes
+
+@app.route('/epic/login', methods=['GET'])
+def epic_login():
+    """Redirect user to Epic OAuth login"""
+    auth_url = get_epic_auth_url()
+    return redirect(auth_url)
+
+@app.route('/callback', methods=['GET'])
+def epic_callback():
+    """Handle Epic OAuth callback"""
+    code = request.args.get('code')
+    if not code:
+        return jsonify({"error": "No authorization code"}), 400
+    
+    token_response = exchange_code_for_token(code)
+    if not token_response:
+        return jsonify({"error": "Failed to get access token"}), 500
+    
+    # Store token in session (in production, use secure storage)
+    session['epic_token'] = token_response.get('access_token')
+    
+    return redirect('/epic-dashboard')
+
+@app.route('/epic-dashboard', methods=['GET'])
+def epic_dashboard():
+    """Show Epic patient data"""
+    return render_template('epic_dashboard.html')
+
+@app.route('/api/epic/patients', methods=['GET'])
+def get_epic_patients():
+    """Fetch patients from Epic FHIR"""
+    try:
+        access_token = session.get('epic_token')
+        if not access_token:
+            return jsonify({"error": "Not authenticated with Epic"}), 401
+        
+        client = EpicFHIRClient(access_token)
+        patients_response = client.search_patients(count=5)
+        
+        if not patients_response:
+            return jsonify({"error": "Failed to fetch patients"}), 500
+        
+        # Parse and format patient data
+        patients_data = []
+        for entry in patients_response.get('entry', []):
+            resource = entry.get('resource', {})
+            name = resource.get('name', [{}])[0]
+            
+            patients_data.append({
+                'id': resource.get('id'),
+                'first_name': name.get('given', [''])[0],
+                'last_name': name.get('family', ''),
+                'dob': resource.get('birthDate'),
+                'gender': resource.get('gender'),
+                'avatar': f'https://ui-avatars.com/api/?name={name.get("given", [""])[0]}+{name.get("family", "")}'
+            })
+        
+        # Create pandas dataframe
+        df = pd.DataFrame(patients_data)
+        
+        return jsonify({
+            "data": patients_data,
+            "table_html": df.to_html(classes='table table-striped'),
+            "query": "Patient.search() from Epic FHIR",
+            "description": "Fetching 5 patients from Epic test system with SMART authentication",
+            "timestamp": datetime.now().isoformat()
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/epic/observations/<patient_id>', methods=['GET'])
+def get_patient_obs(patient_id):
+    """Fetch observations for a specific patient"""
+    try:
+        access_token = session.get('epic_token')
+        if not access_token:
+            return jsonify({"error": "Not authenticated"}), 401
+        
+        client = EpicFHIRClient(access_token)
+        obs_response = client.get_patient_observations(patient_id)
+        
+        if not obs_response:
+            return jsonify({"error": "No observations found"}), 404
+        
+        # Parse observations
+        observations = []
+        for entry in obs_response.get('entry', []):
+            resource = entry.get('resource', {})
+            observations.append({
+                'code': resource.get('code', {}).get('coding', [{}])[0].get('display', 'Unknown'),
+                'value': resource.get('valueQuantity', {}).get('value', 'N/A'),
+                'unit': resource.get('valueQuantity', {}).get('unit', ''),
+                'date': resource.get('effectiveDateTime', 'N/A')
+            })
+        
+        # Create pandas dataframe
+        df = pd.DataFrame(observations)
+        
+        return jsonify({
+            "data": observations,
+            "table_html": df.to_html(classes='table table-striped'),
+            "description": "Patient observations and lab results from Epic",
+            "timestamp": datetime.now().isoformat()
+        }), 200
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

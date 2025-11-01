@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epic FHIR Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        .patient-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: white;
+        }
+        
+        .patient-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+        }
+        
+        .patient-info h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        
+        .patient-info p {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <header>
+            <h1>🏥 Epic FHIR Patient Dashboard</h1>
+            <div class="status">
+                <div class="status-dot"></div>
+                <span>Connected to Epic</span>
+            </div>
+        </header>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Patients from Epic Test System</h2>
+            </div>
+            <div class="card-body">
+                <div id="patients-container">
+                    <p class="text-muted">Loading patients...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container" id="table-container" style="display:none;">
+            <h3>Patient Data (Pandas Table)</h3>
+            <div id="pandas-table"></div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch Epic patients
+        fetch('/api/epic/patients')
+            .then(res => res.json())
+            .then(data => {
+                let html = '';
+                
+                // Display patient cards with avatars
+                data.data.forEach(patient => {
+                    html += `
+                        <div class="patient-card">
+                            <img src="${patient.avatar}" alt="${patient.first_name}" class="patient-avatar">
+                            <div class="patient-info">
+                                <h3>${patient.first_name} ${patient.last_name}</h3>
+                                <p>DOB: ${patient.dob} | Gender: ${patient.gender}</p>
+                                <p style="margin-top: 10px;">
+                                    <button class="btn btn-sm btn-primary" onclick="loadObservations('${patient.id}')">
+                                        View Labs
+                                    </button>
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('patients-container').innerHTML = html;
+                
+                // Show pandas table
+                if (data.table_html) {
+                    document.getElementById('pandas-table').innerHTML = data.table_html;
+                    document.getElementById('table-container').style.display = 'block';
+                }
+            })
+            .catch(err => {
+                document.getElementById('patients-container').innerHTML = 
+                    `<div class="alert alert-danger">Error loading patients: ${err.message}</div>`;
+            });
+
+        function loadObservations(patientId) {
+            fetch(`/api/epic/observations/${patientId}`)
+                .then(res => res.json())
+                .then(data => {
+                    alert('Observations for patient ' + patientId + '\n\n' + JSON.stringify(data.data, null, 2));
+                })
+                .catch(err => alert('Error: ' + err.message));
+        }
+    </script>
+</body>
+</html>
