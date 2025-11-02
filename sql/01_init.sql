@@ -54,6 +54,21 @@ CREATE TABLE IF NOT EXISTS patient_medications (
     end_date DATE
 );
 
+CREATE TABLE IF NOT EXISTS patient_observations (
+    observation_id SERIAL PRIMARY KEY,
+    patient_id INT NOT NULL REFERENCES patients(patient_id),
+    fhir_patient_id VARCHAR(255),
+    test_name VARCHAR(255) NOT NULL,
+    test_code VARCHAR(100),
+    value VARCHAR(100),
+    unit VARCHAR(50),
+    observation_date TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_patient_observations_patient_id ON patient_observations(patient_id);
+CREATE INDEX idx_patient_observations_fhir_id ON patient_observations(fhir_patient_id);
+
 -- Add some sample data
 INSERT INTO patients (first_name, last_name, date_of_birth, email, phone) 
 VALUES 

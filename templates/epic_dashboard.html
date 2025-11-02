@@ -5,43 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Epic FHIR Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='epic-dashboard.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
-    <style>
-        .patient-card {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            background: white;
-        }
-        
-        .patient-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-        }
-        
-        .patient-info h3 {
-            margin: 0;
-            font-size: 18px;
-        }
-        
-        .patient-info p {
-            margin: 5px 0 0 0;
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .table-container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-    </style>
 </head>
 <body>
     <div class="container mt-5">
@@ -70,6 +35,25 @@
         </div>
     </div>
 
+    <!-- Modal for Observations -->
+    <div class="modal fade" id="observationsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="observationsTitle">Patient Labs & Observations</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="observations-content">Loading...</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
         // Fetch Epic patients
         fetch('/api/epic/patients')
@@ -86,7 +70,7 @@
                                 <h3>${patient.first_name} ${patient.last_name}</h3>
                                 <p>DOB: ${patient.dob} | Gender: ${patient.gender}</p>
                                 <p style="margin-top: 10px;">
-                                    <button class="btn btn-sm btn-primary" onclick="loadObservations('${patient.id}')">
+                                    <button class="btn btn-sm btn-primary" onclick="loadObservations('${patient.id}', '${patient.first_name} ${patient.last_name}')">
                                         View Labs
                                     </button>
                                 </p>
@@ -108,14 +92,141 @@
                     `<div class="alert alert-danger">Error loading patients: ${err.message}</div>`;
             });
 
-        function loadObservations(patientId) {
+        function loadObservations(patientId, patientName) {
             fetch(`/api/epic/observations/${patientId}`)
                 .then(res => res.json())
                 .then(data => {
-                    alert('Observations for patient ' + patientId + '\n\n' + JSON.stringify(data.data, null, 2));
+                    // Set modal title
+                    document.getElementById('observationsTitle').textContent = `Labs & Observations for ${patientName}`;
+                    
+                    if (data.error) {
+                        document.getElementById('observations-content').innerHTML = 
+                            `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                    } else if (data.data && data.data.length > 0) {
+                        // Build table
+                        let html = `
+                            <table class="observations-table">
+                                <thead>
+                                    <tr>
+                                        <th>Test Name</th>
+                                        <th>Value</th>
+                                        <th>Unit</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        
+                        data.data.forEach(obs => {
+                            const date = obs.date ? new Date(obs.date).toLocaleDateString() : 'N/A';
+                            html += `
+                                <tr>
+                                    <td>${obs.code}</td>
+                                    <td><strong>${obs.value}</strong></td>
+                                    <td>${obs.unit || 'N/A'}</td>
+                                    <td>${date}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        html += `
+                                </tbody>
+                            </table>
+                        `;
+                        
+                        document.getElementById('observations-content').innerHTML = html;
+                    } else {
+                        document.getElementById('observations-content').innerHTML = 
+                            `<div class="alert alert-info">No observations found for this patient.</div>`;
+                    }
+                    
+                    // Show modal
+                    const modal = new bootstrap.Modal(document.getElementById('observationsModal'));
+                    modal.show();
                 })
-                .catch(err => alert('Error: ' + err.message));
+                .catch(err => {
+                    document.getElementById('observations-content').innerHTML = 
+                        `<div class="alert alert-danger">Error loading observations: ${err.message}</div>`;
+                    const modal = new bootstrap.Modal(document.getElementById('observationsModal'));
+                    modal.show();
+                });
         }
+        function loadObservations(patientId, patientName) {
+    fetch(`/api/epic/observations/${patientId}`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('observationsTitle').textContent = `Labs & Observations for ${patientName}`;
+            
+            if (data.error) {
+                document.getElementById('observations-content').innerHTML = 
+                    `<div class="alert alert-danger">Error: ${data.error}</div>`;
+            } else if (data.data && data.data.length > 0) {
+                let html = `
+                    <table class="observations-table">
+                        <thead>
+                            <tr>
+                                <th>Test Name</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                data.data.forEach(obs => {
+                    const date = obs.date ? new Date(obs.date).toLocaleDateString() : 'N/A';
+                    html += `
+                        <tr>
+                            <td>${obs.code}</td>
+                            <td><strong>${obs.value}</strong></td>
+                            <td>${obs.unit || 'N/A'}</td>
+                            <td>${date}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-success" onclick="saveObservationsToDb('${patientId}')">
+                            💾 Save to Database
+                        </button>
+                    </div>
+                `;
+                
+                document.getElementById('observations-content').innerHTML = html;
+            } else {
+                document.getElementById('observations-content').innerHTML = 
+                    `<div class="alert alert-info">No observations found for this patient.</div>`;
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('observationsModal'));
+            modal.show();
+        })
+        .catch(err => {
+            document.getElementById('observations-content').innerHTML = 
+                `<div class="alert alert-danger">Error loading observations: ${err.message}</div>`;
+            const modal = new bootstrap.Modal(document.getElementById('observationsModal'));
+            modal.show();
+        });
+}
+
+function saveObservationsToDb(patientId) {
+    fetch(`/api/epic/save-observations/${patientId}`, {
+        method: 'POST'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.message) {
+            alert(`✅ Success! Saved ${data.count} observations to database`);
+        } else {
+            alert(`❌ Error: ${data.error}`);
+        }
+    })
+    .catch(err => alert(`❌ Error: ${err.message}`));
+}
     </script>
 </body>
 </html>

@@ -1,0 +1,58 @@
+/* Epic FHIR Dashboard Styles */
+
+.patient-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: white;
+}
+
+.patient-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+}
+
+.patient-info h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.patient-info p {
+    margin: 5px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.table-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.observations-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.observations-table th {
+    background-color: #007bff;
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-weight: bold;
+}
+
+.observations-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #ddd;
+}
+
+.observations-table tr:hover {
+    background-color: #f5f5f5;
+}

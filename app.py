@@ -1,5 +1,5 @@
 # Epic FHIR integration and Flask API for Patient Health Analytics
-from epic_fhir import EpicFHIRClient, get_epic_auth_url, exchange_code_for_token
+from epic_fhir import EpicFHIRClient, get_epic_auth_url, exchange_code_for_token, save_observations_to_db
 from flask import request, session, redirect, url_for
 import pandas as pd
 import json
@@ -12,7 +12,7 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-in-production'  # Add this line
+app.secret_key = 'your-secret-key-change-in-production'
 CORS(app)
 
 # Database connection
@@ -29,11 +29,12 @@ def get_db_connection():
 # Health check endpoint
 @app.route('/api/health', methods=['GET'])
 def health():
-    return jsonify({"status": "API is running ✅"}), 200
+    return jsonify({"status": "API is running ✓"}), 200
 
 @app.route('/', methods=['GET'])
 def dashboard():
     return render_template('index.html')
+
 # Get total patient count
 @app.route('/api/patients/count', methods=['GET'])
 def patient_count():
@@ -148,7 +149,6 @@ def patient_conditions_analytics():
             }
             for r in results
         ]
-
         
         conn.close()
         
@@ -161,7 +161,7 @@ def patient_conditions_analytics():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Epic FHIR routes
+# ===== EPIC FHIR ROUTES =====
 
 @app.route('/epic/login', methods=['GET'])
 def epic_login():
@@ -268,6 +268,95 @@ def get_patient_obs(patient_id):
             "timestamp": datetime.now().isoformat()
         }), 200
         
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/epic/save-observations/<patient_id>', methods=['POST'])
+def save_observations(patient_id):
+    """Save Epic observations to database"""
+    try:
+        access_token = session.get('epic_token')
+        if not access_token:
+            return jsonify({"error": "Not authenticated"}), 401
+        
+        # Get observations from Epic
+        client = EpicFHIRClient(access_token)
+        obs_response = client.get_patient_observations(patient_id)
+        
+        if not obs_response or 'entry' not in obs_response:
+            return jsonify({"error": "No observations found"}), 404
+        
+        # Parse observations
+        observations = []
+        for entry in obs_response.get('entry', []):
+            resource = entry.get('resource', {})
+            observations.append({
+                'code': resource.get('code', {}).get('coding', [{}])[0].get('display', 'Unknown'),
+                'value': resource.get('valueQuantity', {}).get('value', 'N/A'),
+                'unit': resource.get('valueQuantity', {}).get('unit', ''),
+                'date': resource.get('effectiveDateTime', None)
+            })
+        
+        # Save to database
+        conn = get_db_connection()
+        
+        # First, try to find patient in local database
+        cursor = conn.cursor()
+        query = "SELECT patient_id FROM patients LIMIT 1"  # For now, save to first patient
+        cursor.execute(query)
+        result = cursor.fetchone()
+        local_patient_id = result[0] if result else 1
+        
+        # Save observations
+        success = save_observations_to_db(conn, local_patient_id, patient_id, observations)
+        
+        conn.close()
+        
+        if success:
+            return jsonify({
+                "message": "Observations saved successfully",
+                "count": len(observations),
+                "timestamp": datetime.now().isoformat()
+            }), 200
+        else:
+            return jsonify({"error": "Failed to save observations"}), 500
+            
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/patient-observations', methods=['GET'])
+def get_patient_observations_db():
+    """Retrieve saved observations from database"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = """
+        SELECT test_name, value, unit, observation_date 
+        FROM patient_observations 
+        ORDER BY observation_date DESC
+        LIMIT 100
+        """
+        cursor.execute(query)
+        results = cursor.fetchall()
+        
+        observations = [
+            {
+                "test_name": r[0],
+                "value": r[1],
+                "unit": r[2],
+                "date": str(r[3]) if r[3] else None
+            }
+            for r in results
+        ]
+        
+        conn.close()
+        
+        return jsonify({
+            "data": observations,
+            "count": len(observations),
+            "timestamp": datetime.now().isoformat()
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

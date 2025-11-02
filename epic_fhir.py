@@ -29,7 +29,9 @@ class EpicFHIRClient:
         """Get observations (labs, vitals) for a patient"""
         try:
             url = f"{self.fhir_url}/Observation"
-            params = {'patient': patient_id}
+            params = {'patient': patient_id,
+                      'category': 'laboratory'
+                      }
             response = requests.get(url, headers=self.headers, params=params)
             response.raise_for_status()
             return response.json()
@@ -57,7 +59,35 @@ def get_epic_auth_url():
     scope = 'patient/Patient.read patient/Observation.read'
     
     return f"{auth_url}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope={scope}"
-
+def save_observations_to_db(conn, patient_id, fhir_patient_id, observations_data):
+    """Save observations to database"""
+    try:
+        cursor = conn.cursor()
+        
+        for obs in observations_data:
+            query = """
+            INSERT INTO patient_observations 
+            (patient_id, fhir_patient_id, test_name, test_code, value, unit, observation_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(query, (
+                patient_id,
+                fhir_patient_id,
+                obs.get('code', 'Unknown'),
+                obs.get('code', ''),
+                str(obs.get('value', 'N/A')),
+                obs.get('unit', ''),
+                obs.get('date', None)
+            ))
+        
+        conn.commit()
+        cursor.close()
+        return True
+    except Exception as e:
+        print(f"Error saving observations: {e}")
+        conn.rollback()
+        return False
+    
 def exchange_code_for_token(code):
     """Exchange authorization code for access token"""
     try:
