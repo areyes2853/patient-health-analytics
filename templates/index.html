@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,19 +9,39 @@
 <body>
     <div class="container">
         <!-- Header -->
- <header>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1>🏥 Patient Health Analytics Dashboard</h1>
-        <div>
-            <a href="/epic/login" class="btn btn-primary btn-lg" style="margin-right: 10px;">Login with Epic</a>
-            <a href="/bulk-epic-export" class="btn btn-success btn-lg">📊 Bulk Epic Extraction</a>
-        </div>
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>🏥 Patient Health Analytics Dashboard</h1>
+                <div>
+                    <a href="/api/epic/login" class="btn btn-primary btn-lg" style="margin-right: 10px;">Login with Epic</a>
+                    <a href="/bulk-epic-export" class="btn btn-success btn-lg">📊 Bulk Epic Extraction</a>
+                </div>
+            </div>
+            <div class="status">
+                <div class="status-dot"></div>
+                <span>API Connected</span>
+            </div>
+        </header>
+
+<div class="card demo-card">
+    <h2>📋 Demo Instructions (Epic Test Server)</h2>
+    <div class="instructions-content">
+        <ol>
+            <li><strong>Login with Epic:</strong> Click the "Login with Epic" button above</li>
+            <li><strong>Enter Test Credentials:</strong>
+                <div class="credentials">
+                    <div><strong>Username:</strong> <code>fhirjunkie</code></div>
+                    <div><strong>Password:</strong> <code>FHIRJunkie1!</code></div>
+                </div>
+            </li>
+            <li><strong>Authorize Access:</strong> Click allow on the authorization screen</li>
+            <li><strong>View Epic Data:</strong> You'll be redirected to the Epic FHIR dashboard with patient data</li>
+            <li><strong>Bulk Extract Data:</strong> Navigate to "📊 Bulk Epic Extraction" to export all patient demographics</li>
+            <li><strong>Save Data:</strong> Click "💾 Save to Database" to store observations locally</li>
+            <li><strong>View Results:</strong> Return to home page to see saved observations in the dashboard</li>
+        </ol>
     </div>
-    <div class="status">
-        <div class="status-dot"></div>
-        <span>API Connected</span>
-    </div>
-</header>
+</div>
 
         <!-- Dashboard Cards -->
         <div class="dashboard">
@@ -64,117 +83,16 @@
             <div class="data-content" id="all-conditions-data">Loading...</div>
             <div class="timestamp" id="all-conditions-time"></div>
         </div>
+
+        <!-- Saved Epic Observations -->
+        <div class="card">
+            <h2>📊 Saved Epic Observations</h2>
+            <div class="card-description" id="epic-obs-desc">Loading...</div>
+            <div class="data-content" id="epic-obs-data">Loading...</div>
+            <div class="timestamp" id="epic-obs-time"></div>
+        </div>
     </div>
 
-    <script>
-        const API_BASE = '/api';
-
-        // Fetch and display patient count
-        fetch(`${API_BASE}/patients/count`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('count-data').textContent = data.data;
-                document.getElementById('count-desc').textContent = data.description;
-                document.getElementById('count-query').textContent = data.query;
-                document.getElementById('count-time').textContent = `Updated: ${new Date(data.timestamp).toLocaleString()}`;
-            })
-            .catch(err => {
-                document.getElementById('count-data').innerHTML = `<div class="error">Error: ${err.message}</div>`;
-            });
-
-        // Fetch and display all patients
-        fetch(`${API_BASE}/patients`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('patients-desc').textContent = data.description;
-                document.getElementById('patients-query').textContent = data.query;
-                document.getElementById('patients-time').textContent = `Updated: ${new Date(data.timestamp).toLocaleString()}`;
-                
-                let html = `<table>
-                    <tr>
-                        <th>ID</th>
-                        <th>First Name</th>
-                        <th>Last Name</th>
-                        <th>Date of Birth</th>
-                        <th>Email</th>
-                    </tr>`;
-                
-                data.data.forEach(patient => {
-                    html += `<tr>
-                        <td>${patient.id}</td>
-                        <td>${patient.first_name}</td>
-                        <td>${patient.last_name}</td>
-                        <td>${patient.date_of_birth}</td>
-                        <td>${patient.email}</td>
-                    </tr>`;
-                });
-                
-                html += '</table>';
-                document.getElementById('patients-data').innerHTML = html;
-            })
-            .catch(err => {
-                document.getElementById('patients-data').innerHTML = `<div class="error">Error: ${err.message}</div>`;
-            });
-
-        // Fetch and display all conditions
-        fetch(`${API_BASE}/conditions`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('all-conditions-desc').textContent = data.description;
-                document.getElementById('all-conditions-query').textContent = data.query;
-                document.getElementById('all-conditions-time').textContent = `Updated: ${new Date(data.timestamp).toLocaleString()}`;
-                
-                let html = `<table>
-                    <tr>
-                        <th>ID</th>
-                        <th>Condition Name</th>
-                        <th>Description</th>
-                        <th>Severity</th>
-                    </tr>`;
-                
-                data.data.forEach(condition => {
-                    html += `<tr>
-                        <td>${condition.id}</td>
-                        <td>${condition.name}</td>
-                        <td>${condition.description}</td>
-                        <td>${condition.severity}</td>
-                    </tr>`;
-                });
-                
-                html += '</table>';
-                document.getElementById('all-conditions-data').innerHTML = html;
-            })
-            .catch(err => {
-                document.getElementById('all-conditions-data').innerHTML = `<div class="error">Error: ${err.message}</div>`;
-            });
-
-        // Fetch and display patient conditions analytics
-        fetch(`${API_BASE}/analytics/patient-conditions`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('conditions-desc').textContent = data.description;
-                document.getElementById('conditions-query').textContent = data.query;
-                document.getElementById('conditions-time').textContent = `Updated: ${new Date(data.timestamp).toLocaleString()}`;
-                
-                let html = `<table>
-                    <tr>
-                        <th>Condition</th>
-                        <th>Patient Count</th>
-                    </tr>`;
-                
-                data.data.forEach(item => {
-                    html += `<tr>
-                        <td>${item.condition}</td>
-                        <td>${item.patient_count}</td>
-                    </tr>`;
-                });
-                
-                html += '</table>';
-                document.getElementById('conditions-data').innerHTML = html;
-            })
-            .catch(err => {
-                document.getElementById('conditions-data').innerHTML = `<div class="error">Error: ${err.message}</div>`;
-            });
-    </script>
+    <script src="{{ url_for('static', filename='index.js') }}"></script>
 </body>
 </html>
