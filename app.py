@@ -360,5 +360,84 @@ def get_patient_observations_db():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/epic/bulk-export', methods=['GET'])
+def epic_bulk_export():
+    """Fetch all patients from Epic FHIR and return demographic data"""
+    try:
+        access_token = session.get('epic_token')
+        if not access_token:
+            return jsonify({"error": "Not authenticated with Epic"}), 401
+        
+        client = EpicFHIRClient(access_token)
+        patients_response = client.search_patients(count=100)  # Get up to 100 patients
+        
+        if not patients_response:
+            return jsonify({"error": "Failed to fetch patients"}), 500
+        
+        # Parse and format patient data
+        patients_data = []
+        gender_counts = {'male': 0, 'female': 0, 'other': 0}
+        conditions_count = {}
+        
+        for entry in patients_response.get('entry', []):
+            resource = entry.get('resource', {})
+            name = resource.get('name', [{}])[0]
+            gender = resource.get('gender', 'unknown').lower()
+            dob = resource.get('birthDate')
+            
+            # Calculate age
+            if dob:
+                from datetime import datetime
+                birth_date = datetime.strptime(dob, '%Y-%m-%d')
+                age = (datetime.now() - birth_date).days // 365
+            else:
+                age = None
+            
+            patients_data.append({
+                'id': resource.get('id'),
+                'first_name': name.get('given', [''])[0],
+                'last_name': name.get('family', ''),
+                'dob': dob,
+                'age': age,
+                'gender': gender if gender in ['male', 'female'] else 'other',
+                'avatar': f'https://ui-avatars.com/api/?name={name.get("given", [""])[0]}+{name.get("family", "")}'
+            })
+            
+            # Count genders
+            if gender in ['male', 'female']:
+                gender_counts[gender] += 1
+            else:
+                gender_counts['other'] += 1
+        
+        # Create pandas dataframe
+        df = pd.DataFrame(patients_data)
+        
+        # Calculate statistics
+        stats = {
+            'total_patients': len(patients_data),
+            'gender_counts': gender_counts,
+            'average_age': float(df['age'].mean()) if 'age' in df.columns else None,
+            'age_range': {
+                'min': int(df['age'].min()) if 'age' in df.columns else None,
+                'max': int(df['age'].max()) if 'age' in df.columns else None
+            }
+        }
+        
+        return jsonify({
+            "data": patients_data,
+            "stats": stats,
+            "table_html": df.to_html(classes='table table-striped table-hover'),
+            "timestamp": datetime.now().isoformat()
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/bulk-epic-export', methods=['GET'])
+def bulk_epic_export_page():
+    """Show bulk export page"""
+    return render_template('bulk-export.html')
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

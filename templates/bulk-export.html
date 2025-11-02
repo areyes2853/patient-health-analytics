@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Epic FHIR Export</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bulk-export.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+ <header>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <a href="/" class="btn btn-secondary" style="margin-right: 10px;">← Back to Home</a>
+            <h1 style="display: inline; margin-left: 10px;">📊 Bulk Epic FHIR Data Export</h1>
+        </div>
+    </div>
+    <div class="status">
+        <div class="status-dot"></div>
+        <span>Connected to Epic</span>
+    </div>
+</header>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Export Summary</h2>
+                <button id="exportBtn" class="btn btn-primary" onclick="loadBulkData()" style="margin-top: 10px;">
+                    🔄 Export All Patients
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="loading" style="display:none; text-align: center;">
+                    <p>Exporting data from Epic... <span class="spinner-border spinner-border-sm"></span></p>
+                </div>
+                
+                <div id="stats-container" style="display:none;">
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <h3 id="total-patients">0</h3>
+                            <p>Total Patients</p>
+                        </div>
+                        <div class="stat-box">
+                            <h3 id="male-count">0</h3>
+                            <p>Male</p>
+                        </div>
+                        <div class="stat-box">
+                            <h3 id="female-count">0</h3>
+                            <p>Female</p>
+                        </div>
+                        <div class="stat-box">
+                            <h3 id="avg-age">0</h3>
+                            <p>Average Age</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="card mt-4" id="charts-section" style="display:none;">
+            <div class="card-header">
+                <h2>📈 Data Visualization</h2>
+            </div>
+            <div class="card-body">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h4>Gender Distribution</h4>
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>Age Distribution</h4>
+                        <canvas id="ageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table Section -->
+        <div class="card mt-4" id="table-section" style="display:none;">
+            <div class="card-header">
+                <h2>📋 Patient Data</h2>
+                <div style="margin-top: 10px;">
+                    <button class="btn btn-sm btn-info" onclick="downloadCSV()">📥 Download as CSV</button>
+                    <button class="btn btn-sm btn-success" onclick="saveToDB()">💾 Save to Database</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="table-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentData = null;
+        let genderChart = null;
+        let ageChart = null;
+
+        function loadBulkData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('exportBtn').disabled = true;
+            
+            fetch('/api/epic/bulk-export')
+                .then(res => res.json())
+                .then(data => {
+                    currentData = data;
+                    displayStats(data);
+                    displayCharts(data);
+                    displayTable(data);
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('stats-container').style.display = 'block';
+                    document.getElementById('charts-section').style.display = 'block';
+                    document.getElementById('table-section').style.display = 'block';
+                    document.getElementById('exportBtn').disabled = false;
+                })
+                .catch(err => {
+                    alert('Error: ' + err.message);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('exportBtn').disabled = false;
+                });
+        }
+
+        function displayStats(data) {
+            document.getElementById('total-patients').textContent = data.stats.total_patients;
+            document.getElementById('male-count').textContent = data.stats.gender_counts.male;
+            document.getElementById('female-count').textContent = data.stats.gender_counts.female;
+            document.getElementById('avg-age').textContent = 
+                (data.stats.average_age ? Math.round(data.stats.average_age) : 'N/A');
+        }
+
+        function displayCharts(data) {
+            // Gender Chart
+            const genderCtx = document.getElementById('genderChart').getContext('2d');
+            if (genderChart) genderChart.destroy();
+            genderChart = new Chart(genderCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Male', 'Female', 'Other'],
+                    datasets: [{
+                        data: [
+                            data.stats.gender_counts.male,
+                            data.stats.gender_counts.female,
+                            data.stats.gender_counts.other
+                        ],
+                        backgroundColor: ['#007bff', '#ff69b4', '#6c757d']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true
+                }
+            });
+
+            // Age Chart
+            const ageCtx = document.getElementById('ageChart').getContext('2d');
+            if (ageChart) ageChart.destroy();
+            
+            // Create age bins
+            const ages = data.data.map(p => p.age).filter(a => a !== null);
+            const ageBins = {
+                '0-20': 0, '21-40': 0, '41-60': 0, '61-80': 0, '80+': 0
+            };
+            
+            ages.forEach(age => {
+                if (age <= 20) ageBins['0-20']++;
+                else if (age <= 40) ageBins['21-40']++;
+                else if (age <= 60) ageBins['41-60']++;
+                else if (age <= 80) ageBins['61-80']++;
+                else ageBins['80+']++;
+            });
+
+            ageChart = new Chart(ageCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(ageBins),
+                    datasets: [{
+                        label: 'Number of Patients',
+                        data: Object.values(ageBins),
+                        backgroundColor: '#28a745'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayTable(data) {
+            document.getElementById('table-container').innerHTML = data.table_html;
+        }
+
+        function downloadCSV() {
+            if (!currentData) return;
+            
+            let csv = 'ID,First Name,Last Name,DOB,Age,Gender\n';
+            currentData.data.forEach(patient => {
+                csv += `${patient.id},"${patient.first_name}","${patient.last_name}",${patient.dob},${patient.age},${patient.gender}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `bulk-export-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+        }
+
+        function saveToDB() {
+            alert('Save to database feature coming soon!');
+        }
+    </script>
+</body>
+</html>
