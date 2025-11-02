@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Epic FHIR Export</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bulk-export.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <a href="/" class="btn btn-secondary" style="margin-right: 10px;">← Back to Home</a>
+                    <h1 style="display: inline; margin-left: 10px;">📊 Bulk Epic FHIR Data Export</h1>
+                </div>
+            </div>
+            <div class="status">
+                <div class="status-dot"></div>
+                <span>Connected to Epic</span>
+            </div>
+        </header>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Export Summary</h2>
+                <button id="exportBtn" class="btn btn-primary" onclick="loadBulkData()" style="margin-top: 10px;">
+                    🔄 Export All Patients
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="loading" style="display:none; text-align: center;">
+                    <p>Exporting data from Epic... <span class="spinner-border spinner-border-sm"></span></p>
+                </div>
+                
+                <div id="stats-container" style="display:none;">
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <h3 id="total-patients">0</h3>
+                            <p>Total Patients</p>
+                        </div>
+                        <div class="stat-box">
+                            <h3 id="male-count">0</h3>
+                            <p>Male</p>
+                        </div>
+                        <div class="stat-box">
+                            <h3 id="female-count">0</h3>
+                            <p>Female</p>
+                        </div>
+                        <div class="stat-box">
+                            <h3 id="avg-age">0</h3>
+                            <p>Average Age</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="card mt-4" id="charts-section" style="display:none;">
+            <div class="card-header">
+                <h2>📈 Data Visualization</h2>
+            </div>
+            <div class="card-body">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h4>Gender Distribution</h4>
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>Age Distribution</h4>
+                        <canvas id="ageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table Section -->
+        <div class="card mt-4" id="table-section" style="display:none;">
+            <div class="card-header">
+                <h2>📋 Patient Data</h2>
+                <div style="margin-top: 10px;">
+                    <button class="btn btn-sm btn-info" onclick="downloadCSV()">📥 Download as CSV</button>
+                    <button class="btn btn-sm btn-success" onclick="saveToDB()">💾 Save to Database</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="table-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='bulk-export.js') }}"></script>
+</body>
+</html>

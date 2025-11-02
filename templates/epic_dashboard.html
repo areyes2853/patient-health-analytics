@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epic FHIR Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='epic-dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <a href="/" class="btn btn-secondary" style="margin-right: 10px;">← Back to Home</a>
+                    <h1 style="display: inline; margin-left: 10px;">🏥 Epic FHIR Patient Dashboard</h1>
+                </div>
+            </div>
+            <div class="status">
+                <div class="status-dot"></div>
+                <span>Connected to Epic</span>
+            </div>
+        </header>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h2>Patients from Epic Test System</h2>
+            </div>
+            <div class="card-body">
+                <div id="patients-container">
+                    <p class="text-muted">Loading patients...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container" id="table-container" style="display:none;">
+            <h3>Patient Data (Pandas Table)</h3>
+            <div id="pandas-table"></div>
+        </div>
+    </div>
+
+    <!-- Modal for Observations -->
+    <div class="modal fade" id="observationsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="observationsTitle">Patient Labs & Observations</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="observations-content">Loading...</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='epic-dashboard.js') }}"></script>
+</body>
+</html>
