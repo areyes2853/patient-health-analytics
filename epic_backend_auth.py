@@ -274,9 +274,9 @@ class EpicBulkExport:
                 'Prefer': 'respond-async'
             }
             
-            # Epic's test Group for sandbox - contains all test patients
-            # This is Epic's public test group ID for Backend Services
-            test_group_id = 'eDLZHCP9KvVuwMXR0p-bpXA3'
+            # Epic's test Group for sandbox - from official documentation
+            # This is the example Group ID from Epic's Bulk Data Kick-off docs
+            test_group_id = 'eIscQb2HmqkT.aPxBKDR1mIj3721CpVk1suC7rlu3yX83'
             
             # Option 1: Try bulk export with Group
             try:
