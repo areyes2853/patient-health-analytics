@@ -254,21 +254,18 @@ def get_token_info():
 @backend_bp.route('/backend/.well-known/jwks.json', methods=['GET'])
 def get_jwks():
     """Serve JWKS (JSON Web Key Set) for Epic to verify signatures"""
-    try:
-        import json
-        import os
-        
-        jwks_path = os.path.join(os.path.dirname(__file__), '..', '..', 'keys', 'jwks.json')
-        
-        if not os.path.exists(jwks_path):
-            return jsonify({
-                "error": "JWKS not found. Run 'python convert_pem_to_jwk.py' first."
-            }), 404
-        
-        with open(jwks_path, 'r') as f:
-            jwks = json.load(f)
-        
-        return jsonify(jwks), 200
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # Hardcoded JWKS - this is your PUBLIC key (safe to share)
+    jwks = {
+        "keys": [
+            {
+                "kty": "RSA",
+                "kid": "epic-backend-key",
+                "use": "sig",
+                "alg": "RS384",
+                "n": "ljZu5kNEmi1ED3_Ceaqh5hT8Ude8HIaA6XFYesu_SNnvbFaBfa_Hua_8ypdCRmAgqzzjzlAyaCmmDrsKyKySiieBVaDJYBUSroPAQCcSOe4a_UjLbgqAZutqjr72PszlcwFyFHKSRT-261ZuFCGOkmYnv8D3XKiY0cnVd4LjWI1OXQ21pEEXDb2EXyxZhZtgpt4oWlb-BRGa5cRPpDB-yAzNm21ZJadZB_171XlzMtVb3-vx3mllTuIYyCKGkvXIgZlX_MHdOEezHGbtsMo3YKNhNHsc-fpstSshIf51Emaeuh3NwSArFNGvSdEeozQA9AvBJEF7AnDtiRhU2T2PEDsDA6KxUR3jhXytjRsvZW083R4C-2okuHTGLBfomw_ru-euubHgkvTN2U18kv-ZNXB3AdTxG5Ava9IOxGaUzu9SDGVzVg3o0EF2zbYepcceN378HtuzBkB8FpLjC1zGDMAfx73w5dN7FRtH0BClpPAbTzfaG93-T2d7qTo0fhkZLZXxDOHwn3ekJ5WRF0VOfkFrmtw4h-73ivzIhqnwg1wiDBLZO4uUvHo1E4S4pZLhL-6BQFedmDAmm-S89g4j7uOIczS4XxqTloYE-8SQ9U2LCn6DSQWT5o08iMWric5xQJZYNl_djgze_BuwAX3hWEHUuif3iNmpCFD2Y4aACXc",
+                "e": "AQAB"
+            }
+        ]
+    }
+    
+    return jsonify(jwks), 200
