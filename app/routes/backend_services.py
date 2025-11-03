@@ -26,6 +26,7 @@ def get_backend_auth():
 def test_backend_connection():
     """Test backend services authentication"""
     try:
+        import traceback
         auth = get_backend_auth()
         success = auth.test_connection()
         
@@ -43,9 +44,15 @@ def test_backend_connection():
             }), 500
             
     except Exception as e:
+        # Print full traceback to logs
+        print("\n=== BACKEND AUTH ERROR ===")
+        print(traceback.format_exc())
+        print("========================\n")
+        
         return jsonify({
             "status": "error",
-            "message": str(e)
+            "message": str(e),
+            "error_type": type(e).__name__
         }), 500
 
 
