@@ -264,7 +264,7 @@ class EpicBulkExport:
     def simple_patient_export(self, count=100):
         """
         Simplified patient export using standard search
-        Epic requires at least one search parameter
+        Epic requires specific patient IDs or demographics
         """
         try:
             token = self.auth.get_access_token()
@@ -273,24 +273,47 @@ class EpicBulkExport:
                 'Accept': 'application/fhir+json'
             }
             
-            # Epic sandbox requires search parameters
-            # Let's search for patients with common last names in their test data
-            url = f"{self.fhir_url}/Patient"
-            params = {
-                '_count': count,
-                'birthdate': 'ge1900-01-01'  # All patients born after 1900
-            }
+            # Epic sandbox has test patients with known IDs
+            # Let's fetch a few specific test patients
+            test_patient_ids = [
+                'erXuFYUfucBZaryVksYEcMg3',  # Derrick Lin
+                'eq081-VQEgP8drUUqCWzHfw3',  # Desiree Powell
+                'eM0-PqwoSL-kHI66dFGLgWg3',  # Emily Williams
+                'eqUO2FOYGc8S6Dij4LMNIpA3',  # Jason Argonaut
+                'e.5VtBjHjlS6ILI.N0a8RqQ3',  # Camila Lopez
+            ]
             
-            print(f"Fetching up to {count} patients from Epic sandbox...")
-            response = requests.get(url, headers=headers, params=params)
-            response.raise_for_status()
-            
-            data = response.json()
             patients = []
+            print(f"Fetching Epic test patients...")
             
-            for entry in data.get('entry', []):
-                resource = entry.get('resource', {})
-                patients.append(resource)
+            # Fetch each test patient
+            for patient_id in test_patient_ids[:min(len(test_patient_ids), count)]:
+                try:
+                    url = f"{self.fhir_url}/Patient/{patient_id}"
+                    response = requests.get(url, headers=headers)
+                    if response.status_code == 200:
+                        patients.append(response.json())
+                except Exception as e:
+                    print(f"Could not fetch patient {patient_id}: {e}")
+                    continue
+            
+            # If we didn't get enough, try searching by name
+            if len(patients) < 5:
+                try:
+                    url = f"{self.fhir_url}/Patient"
+                    params = {
+                        '_count': 20,
+                        'family': 'Smith'  # Common test name
+                    }
+                    response = requests.get(url, headers=headers, params=params)
+                    if response.status_code == 200:
+                        data = response.json()
+                        for entry in data.get('entry', []):
+                            resource = entry.get('resource', {})
+                            if resource not in patients:
+                                patients.append(resource)
+                except Exception as e:
+                    print(f"Name search failed: {e}")
             
             print(f"✓ Retrieved {len(patients)} patients")
             return patients
