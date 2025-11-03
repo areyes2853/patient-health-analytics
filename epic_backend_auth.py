@@ -28,17 +28,32 @@ class EpicBackendAuth:
         self.token_expiry = None
         
     def load_private_key(self):
-        """Load RSA private key from file"""
+        """Load RSA private key from file or environment variable"""
         try:
+            # First try environment variable (for production)
+            private_key_pem = os.getenv('PRIVATE_KEY_PEM')
+            if private_key_pem:
+                # Clean up the key (remove extra whitespace, ensure proper formatting)
+                private_key_pem = private_key_pem.strip()
+                private_key = serialization.load_pem_private_key(
+                    private_key_pem.encode('utf-8'),
+                    password=None,
+                    backend=default_backend()
+                )
+                print("✓ Loaded private key from environment variable")
+                return private_key
+            
+            # Fallback to file (for local development)
             with open(self.private_key_path, 'rb') as key_file:
                 private_key = serialization.load_pem_private_key(
                     key_file.read(),
                     password=None,
                     backend=default_backend()
                 )
+            print(f"✓ Loaded private key from file: {self.private_key_path}")
             return private_key
         except FileNotFoundError:
-            raise Exception(f"Private key not found at {self.private_key_path}. Run generate_keys.py first.")
+            raise Exception(f"Private key not found at {self.private_key_path} and PRIVATE_KEY_PEM env var not set. Run generate_keys.py first.")
         except Exception as e:
             raise Exception(f"Error loading private key: {e}")
     
