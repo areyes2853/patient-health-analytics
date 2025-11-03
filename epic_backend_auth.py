@@ -33,8 +33,14 @@ class EpicBackendAuth:
             # First try environment variable (for production)
             private_key_pem = os.getenv('PRIVATE_KEY_PEM')
             if private_key_pem:
-                # Clean up the key (remove extra whitespace, ensure proper formatting)
+                # Handle both formats: literal \n and actual newlines
+                if '\\n' in private_key_pem:
+                    # Convert literal \n to actual newlines
+                    private_key_pem = private_key_pem.replace('\\n', '\n')
+                
+                # Clean up the key (remove extra whitespace)
                 private_key_pem = private_key_pem.strip()
+                
                 private_key = serialization.load_pem_private_key(
                     private_key_pem.encode('utf-8'),
                     password=None,
