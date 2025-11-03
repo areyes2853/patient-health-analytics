@@ -264,7 +264,7 @@ class EpicBulkExport:
     def simple_patient_export(self, count=100):
         """
         Simplified patient export using standard search
-        (When full bulk export is not available in sandbox)
+        Epic requires at least one search parameter
         """
         try:
             token = self.auth.get_access_token()
@@ -273,10 +273,15 @@ class EpicBulkExport:
                 'Accept': 'application/fhir+json'
             }
             
+            # Epic sandbox requires search parameters
+            # Let's search for patients with common last names in their test data
             url = f"{self.fhir_url}/Patient"
-            params = {'_count': count}
+            params = {
+                '_count': count,
+                'birthdate': 'ge1900-01-01'  # All patients born after 1900
+            }
             
-            print(f"Fetching {count} patients...")
+            print(f"Fetching up to {count} patients from Epic sandbox...")
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
             
@@ -290,5 +295,8 @@ class EpicBulkExport:
             print(f"✓ Retrieved {len(patients)} patients")
             return patients
             
+        except requests.exceptions.HTTPError as e:
+            error_detail = e.response.text if hasattr(e.response, 'text') else str(e)
+            raise Exception(f"Failed to fetch patients: {e.response.status_code} {e.response.reason} for url: {e.response.url}\nDetails: {error_detail}")
         except Exception as e:
             raise Exception(f"Failed to fetch patients: {e}")
