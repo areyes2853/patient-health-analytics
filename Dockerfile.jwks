@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Copy only what we need for JWKS server
 COPY requirements-jwks.txt .
-COPY jwks_server.py .
+COPY jwks_standalone.py app.py
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements-jwks.txt
@@ -13,4 +13,4 @@ RUN pip install --no-cache-dir -r requirements-jwks.txt
 EXPOSE 5000
 
 # Run the minimal JWKS server
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "jwks_server:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]

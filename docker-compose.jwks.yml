@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  jwks-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.jwks
+    container_name: jwks_server
+    ports:
+      - "5002:5000"
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
