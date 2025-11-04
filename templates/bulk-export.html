@@ -20,9 +20,12 @@
             </div>
             <div class="status">
                 <div class="status-dot"></div>
-                <span>Connected to Epic</span>
+                <span>Connected to Local Database</span>
             </div>
         </header>
+
+        <!-- SQL Query Display for Patients -->
+        <div id="patients-query-display"></div>
 
         <div class="card mt-4">
             <div class="card-header">
@@ -33,7 +36,7 @@
             </div>
             <div class="card-body">
                 <div id="loading" style="display:none; text-align: center;">
-                    <p>Exporting data from Epic... <span class="spinner-border spinner-border-sm"></span></p>
+                    <p>Exporting data from database... <span class="spinner-border spinner-border-sm"></span></p>
                 </div>
                 
                 <div id="stats-container" style="display:none;">
@@ -58,6 +61,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- SQL Query Display for Conditions -->
+        <div id="conditions-query-display"></div>
 
         <!-- Charts Section -->
         <div class="card mt-4" id="charts-section" style="display:none;">

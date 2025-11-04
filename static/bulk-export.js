@@ -34,6 +34,19 @@ function loadPatients() {
 
       allPatients = data.data;
       console.log(`Loaded ${allPatients.length} patients`);
+
+      // Display SQL query
+      if (data.query) {
+        const queryDiv = document.getElementById('patients-query-display');
+        if (queryDiv) {
+          queryDiv.innerHTML = `
+            <div class="alert alert-info">
+              <strong>SQL Query:</strong>
+              <code>${data.query}</code>
+            </div>
+          `;
+        }
+      }
     })
     .catch((err) => {
       console.error('Error loading patients:', err);
@@ -280,6 +293,19 @@ function loadConditions() {
       if (!data.data || !Array.isArray(data.data)) {
         console.log('Invalid conditions data');
         return;
+      }
+
+      // Display SQL query for conditions
+      if (data.query) {
+        const conditionsQueryDiv = document.getElementById('conditions-query-display');
+        if (conditionsQueryDiv) {
+          conditionsQueryDiv.innerHTML = `
+            <div class="alert alert-info">
+              <strong>SQL Query:</strong>
+              <code>${data.query}</code>
+            </div>
+          `;
+        }
       }
 
       // This is optional - conditions are shown separately
