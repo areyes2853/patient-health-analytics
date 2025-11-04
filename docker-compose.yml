@@ -1,35 +1,36 @@
 services:
   postgres:
     image: postgres:15
-    container_name: patient_health_db
     environment:
-      POSTGRES_USER: ${DB_USER:-admin}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-healthpass123}
-      POSTGRES_DB: ${DB_NAME:-patient_health_analytics}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-healthcare_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./sql:/docker-entrypoint-initdb.d
     networks:
       - health_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-admin} -d ${DB_NAME:-patient_health_analytics}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-healthcare_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   flask-api:
     build: .
-    container_name: health_analytics_api
-    ports:
-      - "5001:5000"
+    volumes:
+      - ./keys:/app/keys:ro
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       DB_HOST: ${DB_HOST:-postgres}
-      DB_USER: ${DB_USER:-admin}
-      DB_PASSWORD: ${DB_PASSWORD:-healthpass123}
-      DB_NAME: ${DB_NAME:-patient_health_analytics}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-healthcare_db}
+      EPIC_BACKEND_CLIENT_ID: ${EPIC_BACKEND_CLIENT_ID}
+      PRIVATE_KEY_PATH: ${PRIVATE_KEY_PATH:-./keys/private_key.pem}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
       EPIC_CLIENT_ID: ${EPIC_CLIENT_ID:-19bd6cc8-185d-4b2a-9471-240ce676f733}
       EPIC_FHIR_URL: ${EPIC_FHIR_URL:-https://fhirauth.patientdev.repldev.rep/api/FHIR/R4}
       EPIC_AUTH_URL: ${EPIC_AUTH_URL:-https://patientdev.repldev.rep/oauth2/authorize}

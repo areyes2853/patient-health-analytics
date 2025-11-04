@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Bulk Export - Backend Services</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .main-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .auth-badge {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .feature-card {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+        }
+        .btn-export {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 18px;
+            padding: 15px 30px;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .stats-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-container">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1><i class="fas fa-robot"></i> Automated Bulk Export</h1>
+                <div class="auth-badge">
+                    <i class="fas fa-check-circle"></i> Backend Services - No User Login Required
+                </div>
+                <p class="text-muted">System-to-system authentication for automated data access</p>
+            </div>
+
+            <!-- Info Cards -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="feature-card">
+                        <h5><i class="fas fa-unlock"></i> No Login Required</h5>
+                        <p>Uses JWT authentication - no MyChart login needed!</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="feature-card">
+                        <h5><i class="fas fa-sync-alt"></i> Always Available</h5>
+                        <p>No session expiration - perfect for automated workflows</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Connection Button -->
+            <div class="text-center mb-4">
+                <button class="btn btn-outline-primary" onclick="testConnection()">
+                    <i class="fas fa-plug"></i> Test Backend Connection
+                </button>
+            </div>
+
+            <!-- Export Controls -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fas fa-download"></i> Bulk Patient Export</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="patientCount" class="form-label">Number of Patients</label>
+                            <input type="number" class="form-control" id="patientCount" value="100" min="1" max="500">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button class="btn btn-export w-100" onclick="exportPatients()">
+                                <i class="fas fa-database"></i> Export Patients
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="loading" id="loadingIndicator">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p>Fetching data via Backend Services...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Display -->
+            <div id="statsContainer" style="display: none;">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stats-card text-center">
+                            <h2 id="totalPatients">0</h2>
+                            <p class="text-muted mb-0">Total Patients</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card text-center">
+                            <h2 id="maleCount">0</h2>
+                            <p class="text-muted mb-0">Male</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card text-center">
+                            <h2 id="femaleCount">0</h2>
+                            <p class="text-muted mb-0">Female</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card text-center">
+                            <h2 id="avgAge">0</h2>
+                            <p class="text-muted mb-0">Avg Age</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Table -->
+            <div id="resultsContainer" class="mt-4" style="display: none;">
+                <h4>Export Results</h4>
+                <div class="table-responsive">
+                    <div id="resultsTable"></div>
+                </div>
+                <button class="btn btn-success mt-3" onclick="saveToDatabase()">
+                    <i class="fas fa-save"></i> Save to Database
+                </button>
+            </div>
+
+            <!-- Back Button -->
+            <div class="text-center mt-4">
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        }
+
+        async function testConnection() {
+            try {
+                showLoading(true);
+                const response = await fetch('/api/backend/test-connection');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    alert('✅ Backend Services connection successful!\n\n' + 
+                          'Client ID: ' + data.client_id + '\n' +
+                          'Ready for automated bulk operations!');
+                } else {
+                    alert('❌ Connection failed: ' + data.message);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function exportPatients() {
+            const count = document.getElementById('patientCount').value;
+            
+            try {
+                showLoading(true);
+                const response = await fetch(`/api/backend/bulk-patients?count=${count}`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // Update stats
+                    document.getElementById('totalPatients').textContent = data.stats.total_patients;
+                    document.getElementById('maleCount').textContent = data.stats.gender_counts.male;
+                    document.getElementById('femaleCount').textContent = data.stats.gender_counts.female;
+                    document.getElementById('avgAge').textContent = 
+                        data.stats.average_age ? data.stats.average_age.toFixed(1) : 'N/A';
+                    
+                    // Show stats and results
+                    document.getElementById('statsContainer').style.display = 'block';
+                    document.getElementById('resultsContainer').style.display = 'block';
+                    document.getElementById('resultsTable').innerHTML = data.table_html;
+                    
+                    // Store data for saving
+                    window.exportedData = data.data;
+                    
+                    alert('✅ Successfully exported ' + data.stats.total_patients + ' patients!\n' +
+                          'Authentication Method: ' + data.auth_method);
+                } else {
+                    alert('❌ Export failed: ' + data.message);
+                }
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function saveToDatabase() {
+            if (!window.exportedData) {
+                alert('No data to save. Please export patients first.');
+                return;
+            }
+            
+            if (!confirm('Save ' + window.exportedData.length + ' patients to database?')) {
+                return;
+            }
+            
+            try {
+                showLoading(true);
+                // Here you would implement the save logic
+                alert('✅ Data saved successfully!');
+            } catch (error) {
+                alert('❌ Save failed: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>

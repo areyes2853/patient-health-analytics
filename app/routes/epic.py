@@ -14,16 +14,38 @@ def epic_login():
     return redirect(auth_url)
 
 
+@epic_bp.route('/callback', methods=['GET'])
+def epic_callback():
     """Handle Epic OAuth callback"""
     code = request.args.get('code')
+    error = request.args.get('error')
+    
+    print(f"\n=== EPIC CALLBACK ===")
+    print(f"Code: {code}")
+    print(f"Error: {error}")
+    
+    if error:
+        print(f"ERROR from Epic: {error}")
+        return jsonify({"error": f"Epic error: {error}"}), 400
+    
     if not code:
         return jsonify({"error": "No authorization code"}), 400
     
     token_response = exchange_code_for_token(code)
+    print(f"Token response: {token_response}")
+    print(f"Token response type: {type(token_response)}")
+    
     if not token_response:
+        print("ERROR: token_response is empty!")
         return jsonify({"error": "Failed to get access token"}), 500
     
-    session['epic_token'] = token_response.get('access_token')
+    access_token = token_response.get('access_token')
+    print(f"Access token extracted: {access_token[:20] if access_token else 'NONE'}...")
+    
+    session['epic_token'] = access_token
+    print(f"Session set. Session contents: {dict(session)}")
+    print(f"=== END CALLBACK ===\n")
+    
     return redirect('/epic-dashboard')
 
 # ===== API ROUTES =====
@@ -32,7 +54,12 @@ def get_epic_patients():
     """Fetch patients from Epic FHIR"""
     try:
         access_token = session.get('epic_token')
+        print(f"\n=== GET EPIC PATIENTS ===")
+        print(f"Session contents: {dict(session)}")
+        print(f"Access token from session: {access_token[:20] if access_token else 'NONE'}...")
+        
         if not access_token:
+            print("ERROR: No access token in session!")
             return jsonify({"error": "Not authenticated with Epic"}), 401
         
         client = EpicFHIRClient(access_token)
@@ -66,6 +93,8 @@ def get_epic_patients():
         }), 200
         
     except Exception as e:
+        import traceback
+        print(f"ERROR: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
 @epic_bp.route('/epic/observations/<patient_id>', methods=['GET'])
@@ -157,19 +186,6 @@ def epic_bulk_export():
         if not access_token:
             return jsonify({"error": "Not authenticated with Epic"}), 401
         
-        # ... rest of your code ...
-        
-    except Exception as e:
-        import traceback
-        error_msg = traceback.format_exc()
-        print(f"BULK EXPORT ERROR: {error_msg}")  # Prints to Docker logs
-        return jsonify({"error": str(e), "traceback": error_msg}), 500
-    """Fetch all patients from Epic FHIR and return demographic data"""
-    try:
-        access_token = session.get('epic_token')
-        if not access_token:
-            return jsonify({"error": "Not authenticated with Epic"}), 401
-        
         client = EpicFHIRClient(access_token)
         patients_response = client.search_patients(count=100)
         
@@ -227,4 +243,7 @@ def epic_bulk_export():
         }), 200
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        error_msg = traceback.format_exc()
+        print(f"BULK EXPORT ERROR: {error_msg}")  # Prints to Docker logs
+        return jsonify({"error": str(e), "traceback": error_msg}), 500
