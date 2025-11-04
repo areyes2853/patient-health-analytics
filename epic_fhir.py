@@ -1,6 +1,7 @@
 import requests
 import json
 from requests.auth import HTTPBasicAuth
+from urllib.parse import quote
 import os
 from datetime import datetime
 
@@ -51,14 +52,29 @@ class EpicFHIRClient:
             return None
 
 def get_epic_auth_url():
-    """Generate Epic OAuth2 authorization URL"""
+    """Generate Epic OAuth2 authorization URL with proper URL encoding"""
     client_id = os.getenv('EPIC_CLIENT_ID')
     redirect_uri = os.getenv('REDIRECT_URI')
     auth_url = os.getenv('EPIC_AUTH_URL')
     
     scope = 'patient/Patient.read patient/Observation.read'
     
-    return f"{auth_url}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope={scope}"
+    # URL-encode the redirect_uri - this is crucial for OAuth!
+    # Epic requires the redirect_uri to be properly encoded in the query string
+    encoded_redirect_uri = quote(redirect_uri, safe='')
+    
+    print(f"\n=== EPIC AUTH URL DEBUG ===")
+    print(f"Client ID: {client_id}")
+    print(f"Raw redirect_uri: {redirect_uri}")
+    print(f"Encoded redirect_uri: {encoded_redirect_uri}")
+    print(f"Auth URL base: {auth_url}")
+    
+    full_url = f"{auth_url}?client_id={client_id}&redirect_uri={encoded_redirect_uri}&response_type=code&scope={scope}"
+    print(f"Full auth URL: {full_url}")
+    print(f"=== END DEBUG ===\n")
+    
+    return full_url
+
 def save_observations_to_db(conn, patient_id, fhir_patient_id, observations_data):
     """Save observations to database"""
     try:
@@ -94,6 +110,12 @@ def exchange_code_for_token(code):
         token_url = os.getenv('EPIC_TOKEN_URL')
         client_id = os.getenv('EPIC_CLIENT_ID')
         redirect_uri = os.getenv('REDIRECT_URI')
+        
+        print(f"\n=== TOKEN EXCHANGE DEBUG ===")
+        print(f"Token URL: {token_url}")
+        print(f"Code: {code}")
+        print(f"Redirect URI: {redirect_uri}")
+        print(f"=== END DEBUG ===\n")
         
         data = {
             'grant_type': 'authorization_code',
