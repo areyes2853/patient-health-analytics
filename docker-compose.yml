@@ -3,7 +3,6 @@ services:
     build: .
     ports:
       - "5000:5000"
-      - "5002:5000"
     volumes:
       - ./keys:/app/keys:ro
     environment:
