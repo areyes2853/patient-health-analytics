@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import jsonify, request
 from datetime import datetime
 import pandas as pd
 from . import analytics_bp
@@ -59,6 +59,52 @@ def get_patients():
             "count": len(patient_list),
             "timestamp": datetime.now().isoformat()
         }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===== SAVE PATIENTS TO DATABASE =====
+@analytics_bp.route('/patients/save-bulk', methods=['POST'])
+def save_bulk_patients():
+    """Save bulk patients from export to database"""
+    try:
+        data = request.get_json()
+        patients = data.get('patients', [])
+        
+        if not patients:
+            return jsonify({"error": "No patients provided"}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        saved_count = 0
+        for patient in patients:
+            try:
+                query = """
+                INSERT INTO patients (first_name, last_name, date_of_birth, email)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT DO NOTHING
+                """
+                cursor.execute(query, (
+                    patient.get('first_name', ''),
+                    patient.get('last_name', ''),
+                    patient.get('date_of_birth'),
+                    patient.get('email', '')
+                ))
+                if cursor.rowcount > 0:
+                    saved_count += 1
+            except Exception as e:
+                print(f"Error saving patient {patient.get('first_name')}: {e}")
+                continue
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            "message": f"Successfully saved {saved_count} patients to database",
+            "count": saved_count,
+            "timestamp": datetime.now().isoformat()
+        }), 200
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
