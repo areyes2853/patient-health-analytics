@@ -88,4 +88,4 @@ credentials.json
 keys/
 private_key.pem
 public_key.pem
-jwks.json
+jwks.json.env
