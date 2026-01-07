@@ -2,7 +2,7 @@ services:
   flask-api:
     build: .
     ports:
-      - 5001:5000
+      - 5000:5000
     volumes:
       - ./keys:/app/keys:ro
     environment:
@@ -11,27 +11,11 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-healthcare_db}
-      EPIC_BACKEND_CLIENT_ID: ${EPIC_BACKEND_CLIENT_ID}
-      PRIVATE_KEY_PATH: ${PRIVATE_KEY_PATH:-./keys/private_key.pem}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
-      EPIC_CLIENT_ID: ${EPIC_CLIENT_ID:-19bd6cc8-185d-4b2a-9471-240ce676f733}
-      EPIC_FHIR_URL: ${EPIC_FHIR_URL:-https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4}
-      EPIC_AUTH_URL: ${EPIC_AUTH_URL:-https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize}
-      EPIC_TOKEN_URL: ${EPIC_TOKEN_URL:-https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token}
       REDIRECT_URI: ${REDIRECT_URI:-https://health-analytics.duckdev.me/callback}
-      PRIVATE_KEY_PEM: ${PRIVATE_KEY_PEM}
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=dokploy-network
-      - traefik.http.routers.health-analytics-web.rule=Host(`health-analytics.duckdev.me`)
-      - traefik.http.routers.health-analytics-web.entrypoints=web
-      - traefik.http.services.health-analytics.loadbalancer.server.port=5000
-      - traefik.http.routers.health-analytics-websecure.rule=Host(`health-analytics.duckdev.me`)
-      - traefik.http.routers.health-analytics-websecure.entrypoints=websecure
-      - traefik.http.routers.health-analytics-websecure.tls.certresolver=letsencrypt
     networks:
       - dokploy-network
 
 networks:
   dokploy-network:
-    external: true
+    external: trueg
