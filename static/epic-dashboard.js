@@ -26,6 +26,19 @@ fetch('/api/patients')
       throw new Error('No patient data returned from database');
     }
 
+    // Display the SQL query
+    if (data.query) {
+      const queryDiv = document.getElementById('query-display');
+      if (queryDiv) {
+        queryDiv.innerHTML = `
+          <div class="alert alert-info">
+            <strong>SQL Query:</strong>
+            <code>${data.query}</code>
+          </div>
+        `;
+      }
+    }
+
     let html = '';
 
     // Display patient cards with avatars
@@ -55,7 +68,7 @@ fetch('/api/patients')
 
     // Show total count
     const countHtml = `
-      <div class="alert alert-info">
+      <div class="alert alert-success" style="margin-bottom: 20px;">
         <strong>Total Patients in Database:</strong> ${data.count}
       </div>
     `;
@@ -81,6 +94,19 @@ fetch('/api/analytics/patient-conditions')
   .then((res) => res.json())
   .then((data) => {
     console.log('Conditions data:', data);
+    
+    // Display the SQL query for conditions
+    if (data.query) {
+      const conditionsQueryDiv = document.getElementById('conditions-query-display');
+      if (conditionsQueryDiv) {
+        conditionsQueryDiv.innerHTML = `
+          <div class="alert alert-info">
+            <strong>SQL Query:</strong>
+            <code>${data.query}</code>
+          </div>
+        `;
+      }
+    }
     
     if (data.data && data.data.length > 0) {
       let html = '<h4>Conditions by Patient Count</h4>';

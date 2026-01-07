@@ -19,13 +19,16 @@
             </div>
             <div class="status">
                 <div class="status-dot"></div>
-                <span>Connected to Epic</span>
+                <span>Connected to Local Database</span>
             </div>
         </header>
 
+        <!-- SQL Query Display for Patients -->
+        <div id="query-display"></div>
+
         <div class="card mt-4">
             <div class="card-header">
-                <h2>Patients from Epic Test System</h2>
+                <h2>Total Patients</h2>
             </div>
             <div class="card-body">
                 <div id="patients-container">
@@ -34,9 +37,16 @@
             </div>
         </div>
 
-        <div class="table-container" id="table-container" style="display:none;">
-            <h3>Patient Data (Pandas Table)</h3>
-            <div id="pandas-table"></div>
+        <!-- SQL Query Display for Conditions -->
+        <div id="conditions-query-display"></div>
+
+        <div class="card mt-4" id="table-container" style="display:none;">
+            <div class="card-header">
+                <h2>Conditions by Patient Count</h2>
+            </div>
+            <div class="card-body">
+                <div id="pandas-table"></div>
+            </div>
         </div>
     </div>
 
