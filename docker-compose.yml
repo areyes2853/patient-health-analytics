@@ -5,6 +5,8 @@ services:
       - 5000:5000
     volumes:
       - ./keys:/app/keys:ro
+    env_file:
+      - .env
     environment:
       DB_HOST: patienthealthanalytics-patienthealthanalyticspostgres-k4bn77
       DB_PORT: 5432
@@ -13,13 +15,16 @@ services:
       DB_NAME: healthcare_db
       SECRET_KEY: your-production-secret-key-change-this
       EPIC_CLIENT_ID: 19bd6cc8-185d-4b2a-9471-240ce676f733
+      EPIC_BACKEND_CLIENT_ID: 19bd6cc8-185d-4b2a-9471-240ce676f733
       EPIC_AUTH_URL: https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize
       EPIC_TOKEN_URL: https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token
       EPIC_FHIR_URL: https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4
       REDIRECT_URI: https://health-analytics.duckdev.me/api/callback
+      PRIVATE_KEY_PATH: /app/keys/private_key.pem
     networks:
       - dokploy-network
 
 networks:
   dokploy-network:
     external: true
+    

@@ -29,6 +29,8 @@ class EpicBackendAuth:
         
     def load_private_key(self):
         """Load RSA private key from file or environment variable"""
+        print(f"PRIVATE_KEY_PEM exists: {private_key_pem is not None}")
+        print(f"PRIVATE_KEY_PEM length: {len(private_key_pem) if private_key_pem else 0}")
         try:
             # First try environment variable (for production)
             private_key_pem = os.getenv('PRIVATE_KEY_PEM')
@@ -68,6 +70,10 @@ class EpicBackendAuth:
         Create JWT assertion for client authentication
         This is signed with your private key
         """
+        if not self.client_id:
+            raise Exception("EPIC_BACKEND_CLIENT_ID is not set. Configure your Backend Services client ID.")
+        if not self.token_url:
+            raise Exception("EPIC_TOKEN_URL is not set. Configure Epic's token endpoint URL.")
         private_key = self.load_private_key()
         
         # JWT claims

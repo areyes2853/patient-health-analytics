@@ -28,6 +28,21 @@ def test_backend_connection():
     try:
         import traceback
         auth = get_backend_auth()
+        if not auth.client_id:
+            return jsonify({
+                "status": "error",
+                "message": "EPIC_BACKEND_CLIENT_ID is not set in the backend environment."
+            }), 500
+        if not auth.token_url:
+            return jsonify({
+                "status": "error",
+                "message": "EPIC_TOKEN_URL is not set in the backend environment."
+            }), 500
+        if not auth.fhir_url:
+            return jsonify({
+                "status": "error",
+                "message": "EPIC_FHIR_URL is not set in the backend environment."
+            }), 500
         success = auth.test_connection()
         
         if success:
