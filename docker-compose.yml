@@ -6,16 +6,20 @@ services:
     volumes:
       - ./keys:/app/keys:ro
     environment:
-      DB_HOST: ${DB_HOST:-patienthealthanalytics-patienthealthanalyticspostgres-k4bn77}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-healthcare_db}
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
-      REDIRECT_URI: ${REDIRECT_URI:-https://health-analytics.duckdev.me/callback}
+      DB_HOST: patienthealthanalytics-patienthealthanalyticspostgres-k4bn77
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: healthcare_db
+      SECRET_KEY: your-production-secret-key-change-this
+      EPIC_CLIENT_ID: 19bd6cc8-185d-4b2a-9471-240ce676f733
+      EPIC_AUTH_URL: https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize
+      EPIC_TOKEN_URL: https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token
+      EPIC_FHIR_URL: https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4
+      REDIRECT_URI: https://health-analytics.duckdev.me/api/callback
     networks:
       - dokploy-network
 
 networks:
   dokploy-network:
-    external: trueg
+    external: true
