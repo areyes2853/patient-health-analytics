@@ -29,8 +29,6 @@ class EpicBackendAuth:
         
     def load_private_key(self):
         """Load RSA private key from file or environment variable"""
-        print(f"PRIVATE_KEY_PEM exists: {private_key_pem is not None}")
-        print(f"PRIVATE_KEY_PEM length: {len(private_key_pem) if private_key_pem else 0}")
         try:
             # First try environment variable (for production)
             private_key_pem = os.getenv('PRIVATE_KEY_PEM')
