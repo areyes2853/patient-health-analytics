@@ -10,7 +10,10 @@ def create_app():
     app = Flask(__name__, template_folder=template_dir, static_folder=static_dir, static_url_path='/static')
     
     # Use environment variable for secret key in production
-    app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
+    app.secret_key = os.getenv('SECRET_KEY', 'a3f8b2c1d4e5f6789012345678901234567890abcdef1234567890abcdef1234')
+    app.config['SESSION_COOKIE_SECURE'] = True  # Only send cookie over HTTPS
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     CORS(app)
     
     # ===== PAGE ROUTES =====
