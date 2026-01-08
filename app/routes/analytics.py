@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify, request, render_template
 from datetime import datetime
 import pandas as pd
 from . import analytics_bp
