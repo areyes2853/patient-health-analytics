@@ -4,10 +4,10 @@ import pandas as pd
 from . import analytics_bp
 from app.utils import get_db_connection
 
-# ===== HOME ROUTE =====
-@analytics_bp.route('/')
-def home():
-    return render_template('index.html')
+# # ===== HOME ROUTE =====
+# @analytics_bp.route('/')
+# def home():
+#     return render_template('index.html')
 
 # ===== PATIENT ROUTES =====
 @analytics_bp.route('/health', methods=['GET'])
