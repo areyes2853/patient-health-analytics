@@ -59,6 +59,28 @@ def get_epic_auth_url():
     
     scope = 'patient/Patient.read patient/Observation.read'
     
+    # URL-encode the redirect_uri and scope
+    encoded_redirect_uri = quote(redirect_uri, safe='')
+    encoded_scope = quote(scope, safe='')
+    
+    print(f"\n=== EPIC AUTH URL DEBUG ===")
+    print(f"Client ID: {client_id}")
+    print(f"Raw redirect_uri: {redirect_uri}")
+    print(f"Encoded redirect_uri: {encoded_redirect_uri}")
+    print(f"Auth URL base: {auth_url}")
+    
+    full_url = f"{auth_url}?client_id={client_id}&redirect_uri={encoded_redirect_uri}&response_type=code&scope={encoded_scope}"
+    print(f"Full auth URL: {full_url}")
+    print(f"=== END DEBUG ===\n")
+    
+    return full_url
+    """Generate Epic OAuth2 authorization URL with proper URL encoding"""
+    client_id = os.getenv('EPIC_CLIENT_ID')
+    redirect_uri = os.getenv('REDIRECT_URI')
+    auth_url = os.getenv('EPIC_AUTH_URL')
+    
+    scope = 'patient/Patient.read patient/Observation.read'
+    
     # URL-encode the redirect_uri - this is crucial for OAuth!
     # Epic requires the redirect_uri to be properly encoded in the query string
     encoded_redirect_uri = quote(redirect_uri, safe='')
